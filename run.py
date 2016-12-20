@@ -121,26 +121,16 @@ class Mob(object):
 
 
 class Constants(object):
-    valid_directions = ('N',
-                        'S',
-                        'E',
-                        'W',
-                        'U',
-                        'D',
-                        'NORTH',
+    valid_directions = ('NORTH',
                         'SOUTH',
                         'EAST',
                         'WEST',
                         'UP',
                         'DOWN',
-                        'NE',
-                        'SE',
-                        'NW',
-                        'SW',
                         'NORTHEAST',
                         'SOUTHEAST',
                         'NORTHWEST',
-                        'SOUTHWEST', )
+                        'SOUTHWEST',)
 
 
 def full_description(location):
@@ -323,8 +313,7 @@ tokens = {
         ],
     'nouns':
      [
-        'BEAR',
-        'PRINCESS',
+        'SELF',
         ],
     'filler':[
         'THE',
