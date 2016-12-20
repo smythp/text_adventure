@@ -162,22 +162,22 @@ def full_description(location):
 # returns new location
 def get_direction_loc(loc, direction):
     loc = list(loc)
-    if direction == 'N' or direction == 'NORTH':
+    if direction == 'NORTH':
         modified_loc = loc[0], loc[1] + 1, loc[2]
         return modified_loc
-    if direction == 'E' or direction == 'EAST':
+    if direction == 'EAST':
         modified_loc = loc[0] + 1, loc[1], loc[2]
         return modified_loc
-    if direction == 'S' or direction == 'SOUTH':
+    if direction == 'SOUTH':
         modified_loc = loc[0], loc[1] - 1, loc[2]
         return modified_loc
-    if direction == 'W' or direction == 'WEST':
+    if direction == 'WEST':
         modified_loc = loc[0] - 1, loc[1], loc[2]
         return modified_loc
-    if direction == 'U' or direction == 'UP':
+    if direction == 'UP':
         modified_loc = loc[0], loc[1], loc[2] + 1
         return modified_loc
-    if direction == 'D' or direction == 'DOWN':
+    if direction == 'DOWN':
         modified_loc = loc[0], loc[1], loc[2] - 1
         return modified_loc
 
