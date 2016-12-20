@@ -1,3 +1,7 @@
+# import readline automatically allows for line
+# editing and command history with input()
+import readline
+
 debug = False
 
 class Room(object):
@@ -31,9 +35,8 @@ class Room(object):
         Room.name_index[name] = self
         Room.loc_index[(x, y, z)] = self
         Mob.loc_index[self] = []
-
         
-        # return a dictionary based on a query
+        # return an object based on a query
         # can take name (str), loc (tuple, or index (int)
     def lookup(query):
         if isinstance(query, str):
@@ -70,13 +73,15 @@ class Mob(object):
         self.health, self.ducats = health, ducats
         self.index = len(Mob.index)
         Mob.index.append(self)
-        if name in Mob.name_index:
-            Mob.name_index[name].append(self)
-        else:
-            Mob.name_index[name] = [self]
+
+        Mob.name_index[name] = self
+
         Mob.loc_index[loc].append(self)
         Mob.index.append(self)
         self.loc.inhabitants.append(self)
+
+        # add name to nouns list for parser
+        tokens['nouns'].append(self.name.upper())
 
     # lets you look up an object using index (int),
     # location (tuple), or name (str)
@@ -93,7 +98,7 @@ class Mob(object):
 
     # return the room in a given direction
     def get_room_in_direction(self, direction):
-        if direction not in Constants.valid_directions:
+        if direction not in valid_directions:
             raise LookupError('Not a valid direction')
         new_loc = get_direction_loc(self.loc.loc, direction)
         if new_loc not in Room.loc_index:
@@ -120,17 +125,17 @@ class Mob(object):
         return "<Mob: %s>" % self.name
 
 
-class Constants(object):
-    valid_directions = ('NORTH',
-                        'SOUTH',
-                        'EAST',
-                        'WEST',
-                        'UP',
-                        'DOWN',
-                        'NORTHEAST',
-                        'SOUTHEAST',
-                        'NORTHWEST',
-                        'SOUTHWEST',)
+
+valid_directions = ('NORTH',
+                    'SOUTH',
+                    'EAST',
+                    'WEST',
+                    'UP',
+                    'DOWN',
+                    'NORTHEAST',
+                    'SOUTHEAST',
+                    'NORTHWEST',
+                    'SOUTHWEST',)
 
 
 def full_description(location):
@@ -226,6 +231,9 @@ synonyms = {
     }
 
 
+[token['nouns'].append(item.name) for item in Room.name_index]
+
+
 def check_token_type(token_list, type):
     "Grab the first token of a particular type from a list of tokens."
     for token in token_list:
@@ -282,6 +290,9 @@ def command_execute(commands, player):
             print(full_description(player.loc.description))
         else:
             print("Sadly, you can't go %s from here." % commands['direction'].lower())
+    elif commands['verb'] == 'LOOK' and commands['noun']:
+        print("You're looking at " + \
+              Mob.lookup(commands['noun'].lower()).description + '.')
     elif commands['verb'] and commands['direction'] and commands['verb'] == 'LOOK':
         print(entities.player.get_room_in_direction(commands['direction']))
     elif commands['verb'] and commands['verb'] == 'LOOK':
@@ -343,6 +354,8 @@ synonyms = {
     'MOVE': 'GO',
     'RUN': 'GO',
     'MOVE': 'GO',
+    'YOURSELF': 'PLAYER',
+    'SELF': 'PLAYER',    
     }
 
 
@@ -357,7 +370,7 @@ antechamber = Room('antechamber',
                    10, 11)
 
 
-player = Mob('Player', Room.lookup('gates'), 'yourself')
+player = Mob('player', Room.lookup('gates'), 'yourself')
 gatekeeper = Mob('gatekeeper', Room.lookup('gates'),
                  "the Fortress's ghoulish gatekeeper")
 
