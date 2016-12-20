@@ -1,6 +1,5 @@
 debug = False
 
-
 class Room(object):
 
     # these are class-level indexes that keep track
@@ -108,7 +107,9 @@ class Mob(object):
             self.loc.inhabitants.remove(self)
             self.loc = intended_location
             self.loc.inhabitants.append(self)
-        return intended_location
+            return intended_location
+        else:
+            return False
 
     def __repr__(self):
         return "<%s: Mob object located at %s,\
@@ -185,30 +186,8 @@ def get_direction_loc(loc, direction):
         modified_loc = loc[0], loc[1], loc[2] - 1
         return modified_loc
 
-
-def debug_indexes():
-    print('''Room location index:
-    ''')
-    print(Room.loc_index)
-    print('''Room index:
-    ''')
-    print(Room.index)
-    print('''Room name index:
-    ''')
-    print(Room.name_index)
-    print('''Mob location index
-    ''')
-    print(Mob.loc_index)
-    print('''Mob index:
-    ''')
-    print(Mob.index)
-    print('''Mob name index:
-    ''')
-    print(Mob.name_index)
-
-
+    
 # Lexicon for parser
-
 tokens = {
     'directions': [
         'NORTH',
@@ -306,15 +285,17 @@ def command_execute(commands, player):
         if exit_prompt.upper() == 'Y' or exit_prompt.upper() == 'YES':
             exit()
     if commands['direction'] and not commands['verb'] or commands['verb'] == 'GO':
-        player.move(commands['direction'])
-        print('You move %s to the %s.' % (
-            commands['direction'].lower(),
-            player.loc.name))
-        print(full_description(player.loc.description))
+        if player.move(commands['direction']):
+            print('You move %s to the %s.' % (
+                commands['direction'].lower(),
+                player.loc.name))
+            print(full_description(player.loc.description))
+        else:
+            print("Sadly, you can't go %s from here." % commands['direction'].lower())
     elif commands['verb'] and commands['direction'] and commands['verb'] == 'LOOK':
         print(entities.player.get_room_in_direction(commands['direction']))
     elif commands['verb'] and commands['verb'] == 'LOOK':
-        print('You are at', player.loc.name, str(player.loc.loc))
+        print(full_description(player.loc))
     elif commands['verb'] and commands['verb'] == 'MAP':
         for location in entities.Room.index:
             print(location.name, str(location.loc))
@@ -375,6 +356,10 @@ synonyms = {
     'N': 'NORTH',
     'S': 'SOUTH',
     'E': 'EAST',
+    'NE': 'NORTHEAST',
+    'SE': 'SOUTHEAST',
+    'NW': 'NORTHWEST',
+    'SW': 'SOUTHWEST',
     'W': 'WEST',
     'U': 'UP',
     'D': 'DOWN',
@@ -406,7 +391,9 @@ print()
 print(full_description(player.loc.description))
 
 # game loop
-while 1:
-    query = input('> ')
-    commands = parse_input(query)
-    command_execute(commands, player)
+if __name__ == '__main__':
+    while 1:
+        query = input('> ')
+        commands = parse_input(query)
+        command_execute(commands, player)
+ 
