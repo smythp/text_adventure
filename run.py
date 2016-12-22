@@ -4,16 +4,19 @@ import readline
 
 debug = False
 
-class Room(object):
 
+class Room(object):
+    "Class for rooms in the world. Created with x, y, z \
+    coordinates and descriptions."
+    
     # these are class-level indexes that keep track
     # of all the rooms that have been created
     index = []
     name_index = {}
     loc_index = {}
 
-    # instantiate object and add to class-level indexes
     def __init__(self, name, description, x, y, z=0, ):
+        "instantiate object and add to class-level indexes"
         if name in Room.name_index:
             raise KeyError('That name is already in use for another room')
         if (x, y, z) in Room.loc_index:
@@ -36,9 +39,9 @@ class Room(object):
         Room.loc_index[(x, y, z)] = self
         Mob.loc_index[self] = []
         
-        # return an object based on a query
-        # can take name (str), loc (tuple, or index (int)
     def lookup(query):
+        """return an object based on a query \
+        can take name (str), loc (tuple, or index (int)"""
         if isinstance(query, str):
             out = Room.name_index[query]
             return out
@@ -58,8 +61,8 @@ class Room(object):
         return "<Room: %s>" % self.name
 
 
-# class for creatures in the world
 class Mob(object):
+    "Class for creatures in the world"
     index = []
     name_index = {}
     loc_index = {}
@@ -83,9 +86,10 @@ class Mob(object):
         # add name to nouns list for parser
         tokens['nouns'].append(self.name.upper())
 
-    # lets you look up an object using index (int),
-    # location (tuple), or name (str)
+
     def lookup(query):
+        "Lets you look up an object using index (int),\
+        location (tuple), or name (str)"
         if isinstance(query, str):
             out = Mob.name_index[query]
             return out
@@ -96,8 +100,8 @@ class Mob(object):
             out = Mob.loc_index[query]
             return out
 
-    # return the room in a given direction
     def get_room_in_direction(self, direction):
+        "Return# the room in a given direction"
         if direction not in valid_directions:
             raise LookupError('Not a valid direction')
         new_loc = get_direction_loc(self.loc.loc, direction)
@@ -141,7 +145,7 @@ valid_directions = ('NORTH',
 def full_description(location):
     "Compile a full description of a location in the game, \
     including mobs and objects."
-    output_string = '\n' + player.loc.description + '\n'
+    output_string = player.loc.description + '\n'
 
     mob_list = player.loc.inhabitants
     if len(mob_list) == 1:
@@ -158,9 +162,9 @@ def full_description(location):
     return output_string
 
     
-# takes location tuple and string for direction, i.e. "north"
-# returns new location
 def get_direction_loc(loc, direction):
+    'Takes location tuple and string for direction, i.e. "north" \
+    returns new location'
     loc = list(loc)
     if direction == 'NORTH':
         modified_loc = loc[0], loc[1] + 1, loc[2]
@@ -230,7 +234,7 @@ synonyms = {
     'AMBLE': 'GO',
     }
 
-
+# Add instantiated objects to allowed nouns list
 [token['nouns'].append(item.name) for item in Room.name_index]
 
 
@@ -284,7 +288,7 @@ def command_execute(commands, player):
             exit()
     if commands['direction'] and not commands['verb'] or commands['verb'] == 'GO':
         if player.move(commands['direction']):
-            print('You move %s to the %s.' % (
+            print('You move %s to the %s.\n' % (
                 commands['direction'].lower(),
                 player.loc.name))
             print(full_description(player.loc.description))
@@ -366,7 +370,7 @@ The entrance to the Fortress is to the north.''',
              10, 10)
 
 antechamber = Room('antechamber',
-                   'This drafty antechamber is filled with tapestries depicting the battles of yore.',
+                   'This drafty antechamber is filled with tapestries depicting the battles of yore. The gates of the Fortress of Peril are behind you to the south.',
                    10, 11)
 
 
@@ -376,8 +380,7 @@ gatekeeper = Mob('gatekeeper', Room.lookup('gates'),
 
 
 # print room description on game start
-print()
-print(full_description(player.loc.description))
+print("\n" + full_description(player.loc.description))
 
 # game loop
 if __name__ == '__main__':
@@ -385,4 +388,4 @@ if __name__ == '__main__':
         query = input('> ')
         commands = parse_input(query)
         command_execute(commands, player)
- 
+
