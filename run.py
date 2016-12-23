@@ -85,8 +85,9 @@ class Mob(object):
     loc_index = {}
 
     def __init__(self, name, loc, description,
-                 inventory=[], health=10, ducats=0):
+                 takeable=False, inventory=[], health=10, ducats=0):
         self.name = name
+        self.takeable = takeable
         self.description = description
         self.loc = loc
         self.inventory = inventory
@@ -103,6 +104,27 @@ class Mob(object):
         # add name to nouns list for parser
         tokens['nouns'].append(self.name.upper())
 
+    def show_inventory(self):
+        print('You are carrying:\n')
+        for item in self.inventory:
+            print(item.name)
+
+            
+    def take(self, obj):
+        print(obj.name)
+        print(items_present_at(self.loc))
+        if obj.name.upper() in items_present_at(self.loc):
+            item_present = True
+        else:
+            item_present = False
+        if item_present and obj.takeable:
+            self.inventory.append(obj)
+            self.loc.inhabitants.remove(obj)
+            print('You took the ' + obj.name)
+        elif not item_present:
+            print("You don't see that here.")
+        elif not obj.takeable:
+            print("You can't take that!")
 
     def lookup(query):
         "Lets you look up an object using index (int),\
@@ -157,10 +179,10 @@ def full_description(location):
     elif len(mob_list) == 2:
         mob_sighting = 'You see here %s and %s.' % (mob_list[0].description, mob_list[1].description)
     else:
-        mob_sighting = 'You see here'
+        mob_sighting = 'You see here '
         for mob in mob_list[:-1]:
             mob_sighting += mob.description + ', '
-            mob_sighting += 'and ' + mob.description + '.'
+        mob_sighting += 'and ' + mob_list[-1].description + '.'
 
     output_string += '\n' + mob_sighting + '\n'
     return output_string
@@ -282,6 +304,14 @@ def command_execute(commands, player):
                   Mob.lookup(commands['noun'].lower()).description + '.')
         else:
             print("You don't see that here")
+    elif commands['verb'] == 'GET' and commands['noun']:
+        player.take(Mob.lookup(commands['noun'].lower()))
+    elif commands['verb'] == 'GET' and commands['remainder']:
+        print("You don't see that here.")
+    elif commands['verb'] == 'GET' and not commands['remainder']:
+        print("Take what?")
+    elif commands['verb'] == 'INVENTORY':
+        player.show_inventory()
     else:
         print("You can't do that.")
 
@@ -302,8 +332,10 @@ tokens = {
         ],
     'verbs':[
         'QUIT',
+        'INVENTORY',
         'GO',
         'LOOK',
+        'GET'
         ],
     'nouns':
      [
@@ -320,11 +352,13 @@ tokens = {
     }
 
 synonyms = {
+    'TAKE': 'GET',
     'L': 'LOOK',
     'SCRUTINIZE': 'LOOK',
     'EXAMINE': 'LOOK',
     'X': 'LOOK',
     'N': 'NORTH',
+    'I': 'INVENTORY',
     'S': 'SOUTH',
     'E': 'EAST',
     'NE': 'NORTHEAST',
@@ -359,7 +393,9 @@ antechamber = Room('antechamber',
 player = Mob('player', Room.lookup('gates'), 'yourself')
 gatekeeper = Mob('gatekeeper', Room.lookup('gates'),
                  "the Fortress's ghoulish gatekeeper")
-
+goblet = Mob('goblet', Room.lookup('gates'),
+             "a beautiful emerald-encrusted goblet",
+             takeable=True)
 
 # game loop
 
