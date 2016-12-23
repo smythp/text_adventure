@@ -1,9 +1,26 @@
+# The Fortress of Peril
+# A very incomplete text adventure
+
+# Adapted from some code I wrote to
+# better learn OOP in Python. The 
+# parser, entities, and loop would
+# normally be their own modules.
+# Only look/examine, move, and quit
+# commands have been implemented.
+
+# Requires Python 3
+
+
 # import readline automatically allows for line
 # editing and command history with input()
 import readline
 
-debug = False
+# if true, will print the parser's 
+# interpretation of player commands
+debug = True
 
+
+# create classes for game objects
 
 class Room(object):
     "Class for rooms in the world. Created with x, y, z \
@@ -102,7 +119,7 @@ class Mob(object):
 
     def get_room_in_direction(self, direction):
         "Return# the room in a given direction"
-        if direction not in valid_directions:
+        if direction not in tokens['directions']:
             raise LookupError('Not a valid direction')
         new_loc = get_direction_loc(self.loc.loc, direction)
         if new_loc not in Room.loc_index:
@@ -128,20 +145,7 @@ class Mob(object):
     def __str__(self):
         return "<Mob: %s>" % self.name
 
-
-
-valid_directions = ('NORTH',
-                    'SOUTH',
-                    'EAST',
-                    'WEST',
-                    'UP',
-                    'DOWN',
-                    'NORTHEAST',
-                    'SOUTHEAST',
-                    'NORTHWEST',
-                    'SOUTHWEST',)
-
-
+    
 def full_description(location):
     "Compile a full description of a location in the game, \
     including mobs and objects."
@@ -185,58 +189,22 @@ def get_direction_loc(loc, direction):
         modified_loc = loc[0], loc[1], loc[2] - 1
         return modified_loc
 
-    
-# Lexicon for parser
-tokens = {
-    'directions': [
-        'NORTH',
-        'SOUTH',
-        'EAST',
-        'WEST',
-        ],
-    'verbs':[
-        'QUIT',
-        'GO',
-        'L',
-        'LOOK',
-        'RUN',
-        'WALK',
-        'EAT',
-        'KILL',
-        ],
-    'nouns':
-     [
-        'BEAR',
-        'PRINCESS',
-        ],
-    'filler':[
-        'THE',
-        'TO',
-        'AND',
-        'OF',
-        'A',
-        'AN',],
-    }
-
-
-synonyms = {
-    'L': 'LOOK',
-    'SCRUTINIZE': 'LOOK',
-    'EXAMINE': 'LOOK',
-    'X': 'LOOK',
-    'N': 'NORTH',
-    'S': 'SOUTH',
-    'E': 'EAST',
-    'W': 'WEST',
-    'WALK': 'GO',
-    'MOVE': 'GO',
-    'RUN': 'GO',
-    'AMBLE': 'GO',
-    }
 
 # Add instantiated objects to allowed nouns list
 [token['nouns'].append(item.name) for item in Room.name_index]
 
+
+def items_present_at(location):
+    "Checks if a game object is present at a location.\
+    Returns false if not present."
+    names = []
+    for item in location.inhabitants:
+        names.append(item.name.upper())
+
+    return names
+
+
+# define helper functions for parser and command execution
 
 def check_token_type(token_list, type):
     "Grab the first token of a particular type from a list of tokens."
@@ -266,12 +234,16 @@ def remove_filler_words(token_list, filler_list):
 
 
 def parse_input(input):
+    "Parse input string and return parsed dictionary."
     output_dictionary = {}
     input = input.split()
     input = [token.upper() for token in input]
     input = replace_synonyms(input, synonyms)
     input = remove_filler_words(input, tokens['filler'])
-
+    if len(input) > 1:
+        output_dictionary['remainder'] = input[1:]
+    else:
+        output_dictionary['remainder'] = False
     output_dictionary['verb'] = check_token_type(input, 'verbs')
     output_dictionary['noun'] = check_token_type(input, 'nouns')
     output_dictionary['direction'] = check_token_type(input, 'directions')
@@ -280,6 +252,8 @@ def parse_input(input):
 
 
 def command_execute(commands, player):
+    "Takes commands as parsed dictionary of tokens. \
+    Choose command that fits criteria and execute."
     if debug:
         print(commands)
     if commands['verb'] == 'QUIT':
@@ -294,20 +268,25 @@ def command_execute(commands, player):
             print(full_description(player.loc.description))
         else:
             print("Sadly, you can't go %s from here." % commands['direction'].lower())
-    elif commands['verb'] == 'LOOK' and commands['noun']:
-        print("You're looking at " + \
-              Mob.lookup(commands['noun'].lower()).description + '.')
-    elif commands['verb'] and commands['direction'] and commands['verb'] == 'LOOK':
-        print(entities.player.get_room_in_direction(commands['direction']))
-    elif commands['verb'] and commands['verb'] == 'LOOK':
+    elif commands['direction'] and commands['verb'] == 'LOOK':
+        vista = player.get_room_in_direction(commands['direction'])
+        if vista:
+            print('To the north, you see the ' + vista.name + '.')
+        else:
+            print("You don't see anything in that direction.")
+    elif commands['verb'] == 'LOOK' and not commands['remainder']:
         print(full_description(player.loc))
-    elif commands['verb'] and commands['verb'] == 'MAP':
-        for location in entities.Room.index:
-            print(location.name, str(location.loc))
+    elif commands['verb'] == 'LOOK' and commands['remainder']:
+        if commands['noun'] in items_present_at(player.loc ):
+            print("You're looking at " +
+                  Mob.lookup(commands['noun'].lower()).description + '.')
+        else:
+            print("You don't see that here")
     else:
-        pass
+        print("You can't do that.")
 
-    
+
+# Define the lexicon of words detected by the parser.
 tokens = {
     'directions': [
         'NORTH',
@@ -332,6 +311,7 @@ tokens = {
         ],
     'filler':[
         'THE',
+        'AT',
         'TO',
         'AND',
         'OF',
@@ -359,9 +339,11 @@ synonyms = {
     'RUN': 'GO',
     'MOVE': 'GO',
     'YOURSELF': 'PLAYER',
-    'SELF': 'PLAYER',    
-    }
+    'SELF': 'PLAYER',
+}
 
+
+# instantiate game objects
 
 gates = Room('gates',
              '''After weeks of difficult travel, you have arrived at the gates of the Fortress of Peril. Inside lies the Magical Dingus, the artifact required for your people's salvation...and your own. Adventurer, do you have the temerity to succeed where so many others have fallen?
@@ -379,10 +361,12 @@ gatekeeper = Mob('gatekeeper', Room.lookup('gates'),
                  "the Fortress's ghoulish gatekeeper")
 
 
+# game loop
+
 # print room description on game start
 print("\n" + full_description(player.loc.description))
 
-# game loop
+# main loop
 if __name__ == '__main__':
     while 1:
         query = input('> ')
